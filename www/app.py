@@ -4,22 +4,14 @@ Created on 2018年4月15日
 @author: bomber
 '''
 import logging;logging.basicConfig(level=logging.INFO)
+from webframe import get
+from models.User import User
 
-import asyncio, os, json, time
-from datetime import datetime
 
-from aiohttp import web
-
+@get('/')
 def index(request):
-    return web.Request(body=b'<h1>Awesome</h1>')
-
-async def init(loop):
-    app=web.Application(loop=loop)
-    app.router.add_route('GET','/','index')
-    srv=await loop.create_server(app.make_handler(),'127.0.0.1',9000)
-    logging.info('server started at http://127.0.0.1:9000...')
-    return srv
-
-loop=asyncio.get_event_loop()
-loop.run_tntil_complete(init(loop))
-loop.run_forever()
+    users = yield from User.findAll()
+    return {
+        '__template__':'test.html',
+        'users':users
+    }

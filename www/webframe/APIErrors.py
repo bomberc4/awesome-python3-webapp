@@ -4,6 +4,7 @@ Created on 2018年4月15日
 @author: bomber
 '''
 
+
 class APIError(Exception):
 
     def __init__(self, error, data='', message=''):
