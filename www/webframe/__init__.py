@@ -5,14 +5,13 @@ Created on 2018年4月15日
 '''
 import functools
 import inspect
-from aifc import fn
 
 
 def get(path):
 
     def decorator(func):
 
-        @functools.wrap(func)
+        @functools.wraps(func)
         def wrapper(*args, **kw):
             return func(*args, **kw)
 

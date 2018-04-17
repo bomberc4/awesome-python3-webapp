@@ -4,10 +4,12 @@ Created on 2018年4月15日
 @author: bomber
 '''
 
-from orm.Field import BooleanField, FloatField, IntegerField, StringField, TextField
 from orm.Model import Model
 from models import next_id
 import time
+from orm.Field.StringField import StringField
+from orm.Field.BooleanField import BooleanField
+from orm.Field.FloatField import FloatField
 
 
 class User(Model):
