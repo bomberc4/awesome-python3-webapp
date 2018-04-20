@@ -16,7 +16,7 @@ def get(path):
             return func(*args, **kw)
 
         wrapper.__method__ = 'GET'
-        wrapper.__router__ = path
+        wrapper.__route__ = path
         return wrapper
 
     return decorator

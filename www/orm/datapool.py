@@ -7,6 +7,7 @@ import logging;logging.basicConfig(level=logging.INFO)
 
 import aiomysql
 
+__pool=None
 
 async def create_pool(loop, **kw):
     logging.info('create database connection pool...')
