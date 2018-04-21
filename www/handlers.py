@@ -10,11 +10,14 @@ from models.User import User
 from config import configs
 import hashlib
 import logging
-from webframe.APIErrors import APIValueError, APIError, APIPermissionError
+from webframe.APIs import APIValueError, APIError, APIPermissionError
 from aiohttp import web
 import json
 import re
 from models import next_id
+from models.Comment import Comment
+import markdown2
+from webframe.APIs import Page
 
 COOKIE_NAME = 'awesession'
 _COOKIE_KEY = configs.session.secret
@@ -35,6 +38,9 @@ def get_page_index(page_str):
         p = 1
     return p
 
+def text2html(text):
+    lines = map(lambda s: '<p>%s</p>' % s.replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;'), filter(lambda s: s.strip() != '', text.split('\n')))
+    return ''.join(lines)
 
 def user2cookie(user, max_age):
     expires = str(int(time.time() + max_age))
@@ -78,6 +84,20 @@ def index(request):
     return {
         '__template__': 'blogs.html',
         'blogs': blogs
+    }
+
+
+@get('/blog/{id}')
+async def get_blog(id):
+    blog = await Blog.find(id)
+    comments = await Comment.findAll('blog_id=?', [id], orderBy='created_at desc')
+    for c in comments:
+        c.html_content = text2html(c.content)
+    blog.html_content(markdown2.markdown(blog.content))
+    return {
+        '__template__':'blog.html',
+        'blog':blog,
+        'comments':comments
     }
 
 
@@ -144,6 +164,15 @@ def signout(request):
     logging.info('user signed out.')
     return r
 
+
+@get('/manage/blogs')
+def manage_blogs(*, page='1'):
+    return {
+        '__template__':'manage_blogs.html',
+        'page_index':get_page_index(page)
+    }
+
+
 @get('/manage/blogs/create')
 def manage_create_blog():
     return {
@@ -151,6 +180,7 @@ def manage_create_blog():
         'id': '',
         'action': '/api/blogs'
     }
+
 
 _RE_EMAIL = re.compile(r'^[a-z0-9\.\-\_]+\@[a-z0-9\-\_]+(\.[a-z0-9\-\_]+){1,4}$')
 _RE_SHA1 = re.compile(r'^[0-9a-f]{40}$')
@@ -177,6 +207,17 @@ async def api_register_user(*, email, name, passwd):
     r.content_type = 'application/json'
     r.body = json.dumps(user, ensure_ascii=False).encode('utf-8')
     return r
+
+
+@get('/api/blogs')
+async def api_blogs(*, page='1'):
+    page_index = get_page_index(page)
+    num = await Blog.findNumber('count(id)')
+    p = Page(num, page_index)
+    if num == 0:
+        return dict(page=p, blogs=())
+    blogs = await Blog.findAll(orderBy='created_at desc', limit=(p.offset, p.limit))
+    return dict(page=p, blogs=blogs)
 
 
 @get('/api/blogs/{id}')
